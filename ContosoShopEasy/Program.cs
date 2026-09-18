@@ -77,16 +77,21 @@ namespace ContosoShopEasy
 
         static void DemonstrateProductSearch()
         {
-            // Vulnerable search - demonstrates SQL injection risk
-            string[] searchTerms = { "laptop", "phone", "'; DROP TABLE Products; --", "headphones" };
+            string[] searchTerms =
+            {
+                "laptop",
+                "phone",
+                "' OR 1=1 --",
+                new string('x', 101),
+                "headphones"
+            };
             
             foreach (string searchTerm in searchTerms)
             {
-                Console.WriteLine($"Searching for: '{searchTerm}'");
                 var results = _productService.SearchProducts(searchTerm);
                 Console.WriteLine($"Found {results.Count} products");
                 
-                if (results.Count > 0 && !searchTerm.Contains("DROP"))
+                if (results.Count > 0)
                 {
                     var firstResult = results.First();
                     Console.WriteLine($"  -> {firstResult.Name} - ${firstResult.Price} ({firstResult.Brand})");

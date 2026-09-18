@@ -4,6 +4,7 @@ namespace ContosoShopEasy.Data
 {
     public class ProductRepository
     {
+        private const int MaxSearchTermLength = 100;
         private static List<Product> _products = new List<Product>();
         private static List<Category> _categories = new List<Category>();
         private static int _nextProductId = 1;
@@ -114,16 +115,16 @@ namespace ContosoShopEasy.Data
             return _products.Where(p => p.CategoryId == categoryId && p.IsActive).ToList();
         }
 
-        public List<Product> SearchProducts(string searchTerm)
+        public List<Product> SearchProducts(string? searchTerm)
         {
-            if (string.IsNullOrEmpty(searchTerm))
+            if (string.IsNullOrWhiteSpace(searchTerm) || searchTerm.Length > MaxSearchTermLength)
                 return new List<Product>();
 
-            searchTerm = searchTerm.ToLower();
+            searchTerm = searchTerm.Trim();
             return _products.Where(p => p.IsActive &&
-                (p.Name.ToLower().Contains(searchTerm) ||
-                 p.Description.ToLower().Contains(searchTerm) ||
-                 p.Brand.ToLower().Contains(searchTerm)))
+                (p.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                 p.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                 p.Brand.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)))
                 .ToList();
         }
 
