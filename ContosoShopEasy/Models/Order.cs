@@ -81,21 +81,21 @@ namespace ContosoShopEasy.Models
         public int Id { get; set; }
         public int OrderId { get; set; }
         public PaymentMethod Method { get; set; }
-        public string CardNumber { get; set; }  // This will be a security vulnerability - storing full card numbers
+        public string PaymentToken { get; set; }
+        public string LastFourDigits { get; set; }
+        public string CardType { get; set; }
         public string CardHolderName { get; set; }
-        public string ExpiryDate { get; set; }
-        public string CVV { get; set; }  // Another security vulnerability - storing CVV
         public decimal Amount { get; set; }
         public DateTime ProcessedDate { get; set; }
         public PaymentStatus Status { get; set; }
-        public string? TransactionId { get; set; }
+        public string? ProviderTransactionId { get; set; }
 
         public PaymentInfo()
         {
-            CardNumber = string.Empty;
+            PaymentToken = string.Empty;
+            LastFourDigits = string.Empty;
+            CardType = string.Empty;
             CardHolderName = string.Empty;
-            ExpiryDate = string.Empty;
-            CVV = string.Empty;
             ProcessedDate = DateTime.UtcNow;
             Status = PaymentStatus.Pending;
         }

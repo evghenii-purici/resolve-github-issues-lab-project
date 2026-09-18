@@ -51,8 +51,8 @@ The application contains the following security issues for educational purposes:
 - Plaintext password logging during registration and login
 
 ### 3. Sensitive Data Exposure
-- Full credit card numbers stored and logged
-- CVV codes stored in payment records
+- Payment processing stores provider-issued tokens and last-four display metadata only
+- CVV is never accepted or stored by the payment flow
 - Debug logging exposes sensitive user information
 - Admin credentials hardcoded and displayed in security audit
 
