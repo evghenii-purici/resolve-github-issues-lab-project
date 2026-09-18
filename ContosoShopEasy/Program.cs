@@ -203,36 +203,26 @@ namespace ContosoShopEasy
         static void DemonstratePaymentProcessing()
         {
             // Process payments with various security vulnerabilities
-            var paymentData = new[]
-            {
-                new { CardNumber = "4532015112830366", CardHolder = "Diego Siciliani", Expiry = "12/26", CVV = "123", Amount = 2949.98m },
-                new { CardNumber = "5555555555554444", CardHolder = "Henrietta Mueller", Expiry = "08/25", CVV = "456", Amount = 399.99m },
-                new { CardNumber = "4111111111111111", CardHolder = "Test User", Expiry = "01/24", CVV = "789", Amount = 199.99m }
+                var paymentData = new[]
+                {
+                    new { PaymentToken = "tok_demo_diego", CardType = "Visa", LastFourDigits = "0366", CardHolder = "Diego Siciliani", Amount = 2949.98m },
+                    new { PaymentToken = "tok_demo_henrietta", CardType = "Mastercard", LastFourDigits = "4444", CardHolder = "Henrietta Mueller", Amount = 399.99m },
+                    new { PaymentToken = "tok_demo_test", CardType = "Visa", LastFourDigits = "1111", CardHolder = "Test User", Amount = 199.99m }
             };
 
             foreach (var payment in paymentData)
             {
-                Console.WriteLine($"Processing payment for {payment.CardHolder}");
-                
-                // Vulnerable credit card validation
-                bool isValidCard = _securityValidator.ValidateCreditCard(payment.CardNumber);
-                
-                if (isValidCard)
-                {
+                    Console.WriteLine($"Processing payment for {payment.CardHolder}");
+
                     bool success = _paymentService.ProcessPayment(
-                        payment.CardNumber,
+                        payment.PaymentToken,
+                        payment.CardType,
+                        payment.LastFourDigits,
                         payment.CardHolder,
-                        payment.Expiry,
-                        payment.CVV,
                         payment.Amount
                     );
-                    
+
                     Console.WriteLine(success ? "Payment successful!" : "Payment failed!");
-                }
-                else
-                {
-                    Console.WriteLine("Invalid credit card format!");
-                }
                 Console.WriteLine();
             }
         }

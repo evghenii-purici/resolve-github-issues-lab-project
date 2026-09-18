@@ -1,5 +1,6 @@
 using ContosoShopEasy.Models;
 using ContosoShopEasy.Data;
+using System.Security.Cryptography;
 
 namespace ContosoShopEasy.Services
 {
@@ -17,13 +18,17 @@ namespace ContosoShopEasy.Services
             _orderRepository = orderRepository;
         }
 
-        // Vulnerable payment processing method
-        public bool ProcessPayment(string cardNumber, string cardHolderName, string expiryDate, string cvv, decimal amount)
+        public bool ProcessPayment(string paymentToken, string cardType, string lastFourDigits, string cardHolderName, decimal amount)
         {
-            // Security vulnerability: Log sensitive payment information
-            Console.WriteLine($"[DEBUG] Processing payment for card: {cardNumber}");
-            Console.WriteLine($"[DEBUG] Card holder: {cardHolderName}");
-            Console.WriteLine($"[DEBUG] Expiry: {expiryDate}, CVV: {cvv}");
+            if (amount <= 0 || string.IsNullOrWhiteSpace(paymentToken) ||
+                string.IsNullOrWhiteSpace(cardType) ||
+                lastFourDigits is null || lastFourDigits.Length != 4 || !lastFourDigits.All(char.IsDigit))
+            {
+                Console.WriteLine("[INFO] Payment request was rejected.");
+                return false;
+            }
+
+            Console.WriteLine($"[INFO] Processing {cardType} card ending in {lastFourDigits}.");
             Console.WriteLine($"[DEBUG] Amount: ${amount}");
             
             // Security vulnerability: Log configuration details
@@ -31,92 +36,34 @@ namespace ContosoShopEasy.Services
             Console.WriteLine($"[DEBUG] Merchant: {MERCHANT_NAME}");
             Console.WriteLine($"[DEBUG] Gateway version: {GATEWAY_VERSION}");
 
-            // Simulate payment validation (vulnerable)
-            if (!ValidateCardNumber(cardNumber))
-            {
-                Console.WriteLine($"[ERROR] Invalid card number: {cardNumber}");
-                return false;
-            }
-
-            if (!ValidateExpiryDate(expiryDate))
-            {
-                Console.WriteLine($"[ERROR] Invalid or expired date: {expiryDate}");
-                return false;
-            }
-
             // Simulate payment processing
             Console.WriteLine("[INFO] Connecting to payment gateway...");
             Thread.Sleep(1000); // Simulate network delay
 
-            // Security vulnerability: Generate predictable transaction IDs
-            string transactionId = GenerateTransactionId(cardNumber, amount);
-            
-            // Security vulnerability: Store sensitive card data
+            string transactionId = GenerateTransactionId();
+
             var paymentInfo = new PaymentInfo
             {
                 Method = PaymentMethod.CreditCard,
-                CardNumber = cardNumber, // Should never store full card numbers
+                PaymentToken = paymentToken,
+                LastFourDigits = lastFourDigits,
+                CardType = cardType,
                 CardHolderName = cardHolderName,
-                ExpiryDate = expiryDate,
-                CVV = cvv, // Should never store CVV
                 Amount = amount,
                 ProcessedDate = DateTime.UtcNow,
                 Status = PaymentStatus.Approved,
-                TransactionId = transactionId
+                ProviderTransactionId = transactionId
             };
 
-            Console.WriteLine($"[SUCCESS] Payment processed successfully!");
+            Console.WriteLine("[SUCCESS] Payment processed successfully!");
             Console.WriteLine($"[DEBUG] Transaction ID: {transactionId}");
-            
-            // Security vulnerability: Log complete payment details
-            Console.WriteLine($"[LOG] Payment completed - Card: {cardNumber}, Amount: ${amount}, Transaction: {transactionId}");
 
             return true;
         }
 
-        // Vulnerable card validation
-        private bool ValidateCardNumber(string cardNumber)
+        private string GenerateTransactionId()
         {
-            // Security vulnerability: Weak validation - only checks length
-            if (string.IsNullOrEmpty(cardNumber))
-                return false;
-
-            // Remove spaces and dashes
-            cardNumber = cardNumber.Replace(" ", "").Replace("-", "");
-
-            // Security vulnerability: Accept any 13-19 digit number
-            return cardNumber.Length >= 13 && cardNumber.Length <= 19 && cardNumber.All(char.IsDigit);
-        }
-
-        private bool ValidateExpiryDate(string expiryDate)
-        {
-            // Security vulnerability: Basic validation only
-            if (string.IsNullOrEmpty(expiryDate) || !expiryDate.Contains("/"))
-                return false;
-
-            var parts = expiryDate.Split('/');
-            if (parts.Length != 2)
-                return false;
-
-            if (int.TryParse(parts[0], out int month) && int.TryParse(parts[1], out int year))
-            {
-                if (year < 100) year += 2000; // Convert YY to YYYY
-                var expiry = new DateTime(year, month, 1).AddMonths(1).AddDays(-1);
-                return expiry >= DateTime.Now;
-            }
-
-            return false;
-        }
-
-        // Security vulnerability: Predictable transaction ID generation
-        private string GenerateTransactionId(string cardNumber, decimal amount)
-        {
-            // Vulnerable: Using predictable pattern
-            string lastFour = cardNumber.Length >= 4 ? cardNumber.Substring(cardNumber.Length - 4) : cardNumber;
-            string timestamp = DateTime.Now.ToString("yyyyMMddHHmm");
-            string amountStr = amount.ToString("F2").Replace(".", "");
-            
-            return $"TXN_{timestamp}_{lastFour}_{amountStr}";
+            return $"TXN_{Convert.ToHexString(RandomNumberGenerator.GetBytes(16)).ToLowerInvariant()}";
         }
 
         public bool RefundPayment(string transactionId, decimal amount)

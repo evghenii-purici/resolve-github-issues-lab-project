@@ -78,27 +78,55 @@ namespace ContosoShopEasy.Security
             return true;
         }
 
-        // Vulnerable credit card validation
         public bool ValidateCreditCard(string cardNumber)
         {
             if (string.IsNullOrEmpty(cardNumber))
                 return false;
 
-            // Security vulnerability: Log full credit card number
-            Console.WriteLine($"[DEBUG] Validating credit card: {cardNumber}");
-
-            // Remove spaces and dashes
             cardNumber = cardNumber.Replace(" ", "").Replace("-", "");
 
-            // Security vulnerability: Accept any numeric string of reasonable length
-            if (cardNumber.Length >= 13 && cardNumber.Length <= 19 && cardNumber.All(char.IsDigit))
+            if (cardNumber.Length < 13 || cardNumber.Length > 19 || !cardNumber.All(char.IsDigit))
             {
-                Console.WriteLine("[INFO] Credit card format appears valid");
-                return true;
+                Console.WriteLine("[INFO] Credit card format rejected.");
+                return false;
             }
 
-            Console.WriteLine("[WARNING] Invalid credit card format");
-            return false;
+            int checksum = 0;
+            bool doubleDigit = false;
+            for (int index = cardNumber.Length - 1; index >= 0; index--)
+            {
+                int digit = cardNumber[index] - '0';
+                if (doubleDigit)
+                {
+                    digit *= 2;
+                    if (digit > 9)
+                        digit -= 9;
+                }
+
+                checksum += digit;
+                doubleDigit = !doubleDigit;
+            }
+
+            bool isValid = checksum % 10 == 0;
+            Console.WriteLine(isValid
+                ? $"[INFO] {DetectCardType(cardNumber)} card accepted (ending in {cardNumber[^4..]})."
+                : "[INFO] Credit card checksum rejected.");
+            return isValid;
+        }
+
+        public string DetectCardType(string cardNumber)
+        {
+            string normalizedCardNumber = cardNumber.Replace(" ", string.Empty).Replace("-", string.Empty);
+
+            if (normalizedCardNumber.StartsWith("4"))
+                return "Visa";
+            if (normalizedCardNumber.StartsWith("34") || normalizedCardNumber.StartsWith("37"))
+                return "American Express";
+            if (normalizedCardNumber.Length >= 2 && normalizedCardNumber[0] == '5' && normalizedCardNumber[1] >= '1' && normalizedCardNumber[1] <= '5')
+                return "Mastercard";
+            if (normalizedCardNumber.StartsWith("6"))
+                return "Discover";
+            return "Unknown";
         }
 
         // Security vulnerability: Predictable token generation (simplified)
@@ -168,7 +196,7 @@ namespace ContosoShopEasy.Security
             
             Console.WriteLine("Input validation: ENABLED (but vulnerable)");
             Console.WriteLine("Password encryption: MD5 (WEAK)");
-            Console.WriteLine("Credit card storage: FULL NUMBERS (INSECURE)");
+            Console.WriteLine("Credit card storage: TOKENIZED WITH LAST FOUR DIGITS ONLY");
             Console.WriteLine("Logging level: DEBUG (EXPOSES SENSITIVE DATA)");
             Console.WriteLine("Product search SQL construction: REMOVED");
             Console.WriteLine("XSS protection: MINIMAL");

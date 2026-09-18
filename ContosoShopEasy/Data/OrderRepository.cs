@@ -192,7 +192,6 @@ namespace ContosoShopEasy.Data
             return _nextOrderId;
         }
 
-        // Security vulnerability: Method to get all order details including payment info
         public List<object> GetAllOrderDetailsWithPayments()
         {
             return _orders.Select(o => new
@@ -202,7 +201,15 @@ namespace ContosoShopEasy.Data
                 UserId = o.UserId,
                 TotalAmount = o.TotalAmount,
                 Status = o.Status,
-                PaymentInfo = o.PaymentInfo,
+                Payment = o.PaymentInfo == null ? null : new
+                {
+                    o.PaymentInfo.Method,
+                    o.PaymentInfo.CardType,
+                    o.PaymentInfo.LastFourDigits,
+                    o.PaymentInfo.Amount,
+                    o.PaymentInfo.Status,
+                    o.PaymentInfo.ProviderTransactionId
+                },
                 ShippingAddress = o.ShippingAddress?.ToString(),
                 BillingAddress = o.BillingAddress?.ToString()
             }).Cast<object>().ToList();
